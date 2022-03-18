@@ -1,8 +1,11 @@
 background_colour = (234, 212, 252)
-topleftpointofboard=(0,0)
-windowDimentions = (800,800)
+windowDimentions = (1200,1000)
 
-squareDimentions = [min(windowDimentions[0]//8,windowDimentions[1]//8,100),min(windowDimentions[0]//8,windowDimentions[1]//8,100)]
+topleftpointofboard=(windowDimentions[0]//8,windowDimentions[1]//8)
+
+chessBoardDim = windowDimentions[0]/2
+sqMax = chessBoardDim//8
+squareDimentions = [min(windowDimentions[0]//8,windowDimentions[1]//8,sqMax),min(windowDimentions[0]//8,windowDimentions[1]//8,sqMax)]
 captionText = "Atomic Chess Atempt"
 
 whiteToMoveStart = True
@@ -14,13 +17,3 @@ highlightColor = [(51, 153, 0),(153, 255, 102)]
 Nwidth = 8
 Nheight = 8
 view=1
-
-
-startBoard = [["bR","bN","bB","bQ","bK","bB","bN","bR"],
-["bp","bp","bp","bp","bp","bp","bp","bp"],
-["--","--","--","--","--","--","--","--"],
-["--","--","--","--","--","--","--","--"],
-["--","--","--","--","--","--","--","--"],
-["--","--","--","--","--","--","--","--"],
-["wp","wp","wp","wp","wp","wp","wp","wp"],
-["wR","wN","wB","wQ","wK","wB","wN","wR"]]

@@ -4,8 +4,8 @@ from functions2 import *
 import random
 
 def AI_player(myGame,whiteToPlay):
-    Pieces = myGame.current_Pieces
-    board = myGame.current_board
+    Pieces = myGame.current_Node.current_Pieces
+    board = myGame.current_Node.current_board
 
     color = 'b'
     if whiteToPlay: color = 'w'
