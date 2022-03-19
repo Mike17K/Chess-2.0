@@ -15,9 +15,14 @@ def AI_player(myGame,whiteToPlay):
         if piece[0]==color:
             moves = leagalMoves(piece,myGame)
             #print(piece," : ",moves)
-            if len(moves)>1:
+            if len(moves)>0:
                 choices.append([piece,moves])
     
+    if len(choices)==0: 
+        print("Mate")
+        whiteToPlay=not whiteToPlay
+        return 1
+        
 
     finalChoice = choices[random.randint(0,len(choices)-1)]
     finalMove = finalChoice[1][random.randint(0,len(finalChoice[1])-1)]
@@ -25,4 +30,5 @@ def AI_player(myGame,whiteToPlay):
     #print(finalChoice)
     movePiece(finalChoice[0],finalMove,myGame)
 
+    return 0
     

@@ -100,6 +100,7 @@ class assets:
             elif asset.type=='button_togle':
                 if asset.hover and asset.click==1:  
                     asset.mode=(asset.mode+1)%2
+                    #print(asset.mode)
 
                 if asset.mode==0: 
                     color = asset.color[1]
@@ -138,6 +139,7 @@ class button(assets):
     
     def returnValue(self,click):
         if click==1 and self.hover:
+            click=0
             return True
         return False
 
@@ -160,6 +162,7 @@ class button_togle(assets):
     def returnValue(self,click):
         self.click=click
         if click==1 and self.hover:
+            click=0
             return True
         return False
 

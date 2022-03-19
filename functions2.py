@@ -18,7 +18,8 @@ from traceback import print_tb
 from globalVariables2 import *
 
 class Node():
-    def __init__(self,move,board,pieces,info):#,value):
+    def __init__(self,move,board,pieces,info,whiteToPlay):#,value):
+        self.whiteToPlay = whiteToPlay
         self.move = move
 
         itm1 = board
@@ -51,7 +52,7 @@ class Node():
    
 
 def printNodeTree(node,layer):
-    print(layer," value: ",node.move)
+    print(layer," value: ",node.move,node)
     
     if len(node.children)== 0:
         return 0
@@ -61,24 +62,31 @@ def printNodeTree(node,layer):
 
 
 def delNode(node): ##not working fixxxxxxxx
+
     n = len(node.children)
+    print("Deleteting Node: ",node.move,node)
+    tmp = node.children
+    
     for child in range(n):
-        delNode(node.children[child])
+        delNode(tmp[child])
+    del tmp , n
+    del node 
     
 
-    print("Deleteting Node: ",node.move)
-    del node
     
 
 
 class ChessGame():
-    def __init__(self,board,pieces,info):
-        self.root=Node(None,board,pieces,info)        
+    def __init__(self,board,pieces,info,whiteToPlay):
+        self.root=Node(None,board,pieces,info,whiteToPlay)        
 
         self.current_Node = self.root
         
     def goToStartNode(self):
-        self.current_Node = self.root
+        self.current_Node 
+        while True:
+            if self.current_Node .parent==None: break
+            self.current_Node = self.current_Node .parent
 
     def goOnelayerUp(self):
         self.current_Node = self.current_Node.parent
@@ -119,7 +127,7 @@ class ChessGame():
             if child.move==move:
                 self.current_Node = child
                 return
-        self.current_Node.addChild(Node(move,tmp1,tmp2,tmp3))
+        self.current_Node.addChild(Node(move,tmp1,tmp2,tmp3, not self.current_Node.whiteToPlay))
         self.current_Node = self.current_Node.children[-1]
 
 def newPos(t,dx,dy):
@@ -309,9 +317,16 @@ def posibleMoves(piece,myGame):
     return squares
 
 def movePiece(piece,newPos,myGame): #add casles
-    pieces = myGame.current_Node.current_Pieces
-    board = myGame.current_Node.current_board
+    tmp=len(myGame.current_Node.current_Pieces)*[None]
+    for i in range(len(myGame.current_Node.current_Pieces)):
+        tmp[i] = myGame.current_Node.current_Pieces[i]
+    pieces = tmp
 
+    tmp=len(myGame.current_Node.current_board)*[None]
+    for i in range(len(myGame.current_Node.current_board)):
+        tmp[i] = myGame.current_Node.current_board[i]
+    board = tmp
+    
     #print(pieces)
     for p in range(len(pieces)):
         if int(pieces[p][2:])==newPos:
@@ -526,6 +541,7 @@ def leagalMoves(piece,myGame): #piece : my moving piece, pieces all the pieces o
         finalSq=posibleMove[:]            
 
     if isCheck(piece[0],aSq,myGame.current_Node): #A BAD WAY OF FINDING THE MOVES THAT LEAD TO NO CHECK IF IS CHECK  IN THE FIRST PLACE
+        #print("is in check!")
         finalSq_output = []
         for move in finalSq:
             #print("do the move: "+piece[:2]+str(move))

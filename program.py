@@ -7,6 +7,7 @@ from AI import *
 
 board = Nheight*Nwidth*[None]
 pygame.init()
+whiteToPlay=True
 
 #Create pieces
 Pieces = ['wR0','wN1','wB2','wQ3','wK4','wB5','wN6','wR7']
@@ -22,8 +23,7 @@ for piece in Pieces: board[int(piece[2:])] = piece[:2]
 # Main program
 #################
 screen=createWindow()
-myGame = ChessGame(board,Pieces,[None,True,True,True,True]) #None: no pawn 2 moves before, ,True,True,True,True for each roke
-
+myGame = ChessGame(board,Pieces,[None,True,True,True,True],whiteToPlay) #None: no pawn 2 moves before, ,True,True,True,True for each roke
 #chessPosition1(screen,myGame)
 click=0
 
@@ -33,20 +33,19 @@ Button2 = button(screen,click,pos=[4.2*chessBoardDim//8,1.5*topleftpointofboard[
 Button3 = button(screen,click,pos=[5.5*chessBoardDim//8,1.5*topleftpointofboard[1]+chessBoardDim],dimentions = [chessBoardDim//8,chessBoardDim//16],font=18,text="DEL",color=[[254, 100, 107],[254, 21, 60]])
 Button4 = button(screen,click,pos=[6.8*chessBoardDim//8,1.5*topleftpointofboard[1]+chessBoardDim],dimentions = [chessBoardDim//8,chessBoardDim//16],font=18,text=">",color=[[57, 40, 28],[91, 83, 69]])
 Button5 = button(screen,click,pos=[8.1*chessBoardDim//8,1.5*topleftpointofboard[1]+chessBoardDim],dimentions = [chessBoardDim//8,chessBoardDim//16],font=18,text=">>",color=[[57, 40, 28],[91, 83, 69]])
-
-Button6 = button_togle(screen,click,pos=[1.5*chessBoardDim,topleftpointofboard[1]],dimentions = [chessBoardDim//8,chessBoardDim//16],font=18,text="AI",color=[[254, 100, 107],[91, 186, 69]])
-
+Button6 = button_togle(screen,click,pos=[1.5*chessBoardDim,topleftpointofboard[1]],dimentions = [chessBoardDim//8,chessBoardDim//16],font=18,text="AI On-Off",color=[[91, 186, 69],[254, 100, 107]])
+Button6.mode = 1
+Button8 = button_togle(screen,click,pos=[1.5*chessBoardDim+1.5*chessBoardDim//8,topleftpointofboard[1]],dimentions = [chessBoardDim//8,chessBoardDim//16],font=18,text="AI color",color=[[50, 50, 50],[255, 255, 255]])
+Button8.mode = 1
 Button7 = button_togle(screen,click,pos=[5.5*chessBoardDim//8,chessBoardDim//8+1.5*topleftpointofboard[1]+chessBoardDim],dimentions = [chessBoardDim//8,chessBoardDim//16],font=18,text="Rotate",color=[[50, 50, 50],[255, 255, 255]])
 
-
+#program loop
 running = True
-AI=0
-whiteToPlay=True
-AIColor= not whiteToPlay
+AI=Button6.mode
+AIColor=not (Button8.mode==1)
 startPos=None
 highlightSq=[]
 while running:
-    assets.update()
     for event in pygame.event.get():
  
         if event.type == pygame.QUIT:
@@ -71,12 +70,9 @@ while running:
                     #pygame.event.get()
                     time.sleep(0.3)
                     drawBoard(screen,myGame.current_Node.current_board,view,highlightSq)
-                
-
         if event.type == pygame.MOUSEBUTTONUP: click=0 #click handle kai move
         if event.type == pygame.MOUSEBUTTONDOWN: #click handle kai move
             if click==0: click=1
-
             pos = getMouseSq(view)
             if pos==None: break
             if startPos!=None:
@@ -87,13 +83,11 @@ while running:
                     startPos = None
                     highlightSq=[]
                     break
-                
             if myGame.current_Node.current_board[pos]!=None:
                 ok = False
                 if whiteToPlay:
                     if myGame.current_Node.current_board[pos][0]=='w': ok = True
                 elif myGame.current_Node.current_board[pos][0]=='b': ok = True
-
                 if ok:
                     startPos = pos
                     highlightSq=leagalMoves(myGame.current_Node.current_board[pos]+str(pos),myGame)
@@ -104,7 +98,8 @@ while running:
                 startPos = None
                 highlightSq=[]
 
-    
+    assets.update()
+
     if Button1.returnValue(click): #display the start position
         click=0
         myGame.goToStartNode()
@@ -113,47 +108,36 @@ while running:
         click=0
         if myGame.current_Node.parent!=None:
             myGame.goOnelayerUp()
+            whiteToPlay = myGame.current_Node.whiteToPlay
+        highlightSq=[]
         
     if Button3.returnValue(click):#del move #add the hole tree of moves when i add it
         click=0
+        highlightSq=[]
         if myGame.current_Node.parent!=None:
-            print("Deleting Tree...")
-            tmp = myGame.current_Node.parent
-            delNode(myGame.current_Node) #fix
-            myGame.current_Node = tmp
+            print("Delete in not working correctly!")
 
+    if Button4.returnValue(click): myGame.goToTheNextNode() #fix
+    if Button5.returnValue(click): myGame.goToTheFinalPosition()
+    if Button7.returnValue(click): view*=-1
 
-    if Button4.returnValue(click):
-        click=0
-        myGame.goToTheNextNode() #fix
+    if Button6.returnValue(click): #activate AI
+        AI=(Button6.mode+1)%2
+        highlightSq = []
 
-    if Button5.returnValue(click):
-        click=0
-        myGame.goToTheFinalPosition()
+    if Button8.returnValue(click): #choose AI color
+        AIColor=(Button8.mode==1)
+        highlightSq = []
 
-    if Button6.returnValue(click):
-        click=0
-        AI=Button6.mode
-        AIColor = whiteToPlay
-        #print("True")
-
-    if Button7.returnValue(click):
-        click=0
-        view*=-1
-
-    mytext = ''''''
-
-    '''
-    label(screen,pos=[750,400],dimentions = [200,100],font=12,text=mytext,bg_color=[203, 246, 255])
-
-    '''
 
     if whiteToPlay==AIColor and AI==1:
-        #print(whiteToPlay==False)
-        AI_player(myGame,whiteToPlay)
-        whiteToPlay=not whiteToPlay
-        
-
+        if AI_player(myGame,whiteToPlay)==0:
+            whiteToPlay=not whiteToPlay
+        else:
+            AI=0
+            Button6.mode=0
+    
+    #add labels
 
     drawBoard(screen,myGame.current_Node.current_board,view,highlightSq)
 
