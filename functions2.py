@@ -16,52 +16,50 @@ leagalMoves(piece,myGame) #all the legal squares from the piece
 from shutil import move
 from traceback import print_tb
 from globalVariables2 import *
+import numpy as np
 
-class Node():
-    def __init__(self,move,board,pieces,info,whiteToPlay):#,value):
+#consider add dictionarry instead of array for traking the pieces
+
+class Node:
+    def __init__(self,move,board,pieces,info,whiteToPlay): #add self.king positions = [w pos,b pos] to remove some loops
+        # elements
         self.whiteToPlay = whiteToPlay
         self.move = move
 
-        itm1 = board
-        tmp1 = len(itm1)*[None]
-        for sq in range(len(itm1)): 
-            tmp1[sq]=itm1[sq]
-        self.current_board = tmp1
-
-        itm2 = pieces
-        tmp2 = len(itm2)*[None]
-        for sq in range(len(itm2)): 
-            tmp2[sq]=itm2[sq]
-        self.current_Pieces = tmp2
-
-        itm3 = info
-        tmp3 = len(itm3)*[None]
-        for sq in range(len(itm3)): 
-            tmp3[sq]=itm3[sq]
-        self.current_info = tmp3
+        self.current_board = np.copy(board)
+        self.current_Pieces = np.copy(pieces)
+        self.current_info = np.copy(info)
 
         self.parent=None
-        self.children = []
-    
+        self.children = {}
+        #
+
     def setParent(self,parent):
         self.parent = parent
 
     def addChild(self,child):
         child.setParent(self) #def the childs parent the curent node
-        self.children.append(child) #add the child to child list
-   
+        self.children[str(child.move)]=child #add the child to child list
+    
+    def removeChild(self,node):
+        del self.children[str(node.move)]
+        
+    def copy(self):
+        return Node(self.move,self.board,self.pieces,self.info,self.whiteToPlay)
+       
 
 def printNodeTree(node,layer):
-    print(layer," value: ",node.move,node)
+    print(layer," value: ",node.move,node,node.current_info)
     
-    if len(node.children)== 0:
+    if len(node.children.keys())== 0:
         return 0
 
-    for child in node.children:
+    for move,child in node.children.items():
         printNodeTree(child,layer+1)
 
 
-def delNode(node): ##not working fixxxxxxxx
+def delNode(node): 
+    node.parent.removeChild(node)
 
     n = len(node.children)
     print("Deleteting Node: ",node.move,node)
@@ -71,10 +69,7 @@ def delNode(node): ##not working fixxxxxxxx
         delNode(tmp[child])
     del tmp , n
     del node 
-    
-
-    
-
+        
 
 class ChessGame():
     def __init__(self,board,pieces,info,whiteToPlay):
@@ -92,43 +87,20 @@ class ChessGame():
         self.current_Node = self.current_Node.parent
     
     def goToTheNextNode(self,move):
-        for child in self.current_Node.children:
-            if child.move==move:
-                self.current_Node = child
-                return
-        self.current_Node.addChild(Node(move,self.current_Node.current_board,self.current_Node.current_Pieces,self.current_Node.current_info))
-        self.current_Node = self.current_Node.children[-1]
+        if str(move) in self.current_Node.children.keys(): 
+            self.current_Node = self.current_Node.children[str(move)]
+            return
+
+        tmp = Node(move,self.current_Node.current_board,self.current_Node.current_Pieces,self.current_Node.current_info,not self.current_Node.whiteToPlay)
+        self.current_Node.addChild(tmp)
+        self.current_Node = tmp
     
     def goToTheFinalPosition(self):
         pass
 
-    def update(self,move,board,Pieces,info):
-        tmp1 = len(board)*[None]
-        for sq in range(len(board)): 
-            tmp1[sq]=board[sq]
-        
-        
-        tmp2 = len(Pieces)*[None]
-        for piece in range(len(Pieces)): 
-            tmp2[piece]=Pieces[piece]
-        
-
-        tmp3 = len(info)*[None]
-        for i in range(len(info)): 
-            tmp3[i]=info[i]
-        
-        
-        '''
-        self.current_Node.current_board = tmp1
-        self.current_Node.current_Pieces = tmp2
-        self.current_Node.current_info = tmp3
-        '''
-        for child in self.current_Node.children:
-            if child.move==move:
-                self.current_Node = child
-                return
-        self.current_Node.addChild(Node(move,tmp1,tmp2,tmp3, not self.current_Node.whiteToPlay))
-        self.current_Node = self.current_Node.children[-1]
+    def update(self,node):        
+        self.current_Node = node
+    
 
 def newPos(t,dx,dy):
     if t>=Nwidth*Nheight: return False, None
@@ -168,7 +140,7 @@ def pinnedSquares(_Pieces,color,board):
                         if (board[sq][1] in ['B','Q'] and (abs(direction[0])+abs(direction[1])==2)) or (board[sq][1] in ['R','Q'] and (abs(direction[0])+abs(direction[1])==1)): 
                             squares.append(pinnedPos)
                             directions.append([direction[0],direction[1]])
-                            break
+                        break    
                     elif board[sq][0]==color and mode==1: break
     return True,directions,squares
 
@@ -184,9 +156,9 @@ def printBoard(_board):
         print()
     print()
 
-def posibleMoves(piece,myGame):
-    board = myGame.current_board
-    info = myGame.current_info
+def posibleMoves(piece,node):
+    board = node.current_board
+    info = node.current_info
 
     squares = []
 
@@ -197,14 +169,14 @@ def posibleMoves(piece,myGame):
 
     if type =='p': #add unpassun
         if pos//Nwidth == 4 and color=='w': #white captures
-            if myGame.current_info[0]==pos%Nwidth+1 and pos%Nwidth+1<Nwidth: #right unpassun
+            if info[0]==pos%Nwidth+1 and pos%Nwidth+1<Nwidth: #right unpassun
                 squares.append(pos+9)
-            elif myGame.current_info[0]==pos%Nwidth-1 and pos%Nwidth-1>=0: #left unpassun
+            elif info[0]==pos%Nwidth-1 and pos%Nwidth-1>=0: #left unpassun
                 squares.append(pos+7)
         elif pos//Nwidth == 3 and color=='b': #black captures
-            if myGame.current_info[0]==pos%Nwidth+1 and pos%Nwidth+1<Nwidth: #right unpassun
+            if info[0]==pos%Nwidth+1 and pos%Nwidth+1<Nwidth: #right unpassun
                 squares.append(pos-7)
-            elif myGame.current_info[0]==pos%Nwidth-1 and pos%Nwidth-1>=0: #left unpassun
+            elif info[0]==pos%Nwidth-1 and pos%Nwidth-1>=0: #left unpassun
                 squares.append(pos-9) 
 
         if (pos//Nwidth==1 and color=='w') or (pos//Nwidth==Nheight-2 and color=='b'): #2squares front move
@@ -291,59 +263,60 @@ def posibleMoves(piece,myGame):
                 if board[sq]!=None:
                     if board[sq][0]==color: continue
                 squares.append(sq)
+        
         #roke handle
         #white 
-        aSq = attacking_Squares_Total(color,myGame)
+        aSq = attacking_Squares_Total(color,node)
         #print(aSq)
         if color == 'w' and pos==4:
             if info[1]: #small roke
                 if board[6]==None and board[5]==None: 
-                    if 6 not in aSq and 5 not in aSq: 
+                    if 6 not in aSq and 5 not in aSq and 4 not in aSq: 
                         squares.append(6)
             if info[2]: #big roke
                 if board[1]==None and board[2]==None and board[3]==None:
-                    if 2 not in aSq and 3 not in aSq:
+                    if 2 not in aSq and 3 not in aSq and 4 not in aSq:
                         squares.append(2)
         elif color == 'b' and pos==60: #black
             if info[3]: #small roke
                 if board[61]==None and board[62]==None:
-                    if 61 not in aSq and 62 not in aSq: 
+                    if 61 not in aSq and 62 not in aSq and 60 not in aSq: 
                         squares.append(62)
             if info[4]: #big roke
-                if board[57]==None and board[58]==None and board[59]==None:
-                    if 58 not in aSq and 59 not in aSq:
+                if board[57]==None and board[58]==None and board[59]==None :
+                    if 58 not in aSq and 59 not in aSq and 60 not in aSq: 
                         squares.append(58)
             
     return squares
+import time 
 
-def movePiece(piece,newPos,myGame): #add casles
-    tmp=len(myGame.current_Node.current_Pieces)*[None]
-    for i in range(len(myGame.current_Node.current_Pieces)):
-        tmp[i] = myGame.current_Node.current_Pieces[i]
-    pieces = tmp
+def movePiece(piece,newPos,node): 
+    move = piece+" "+str(newPos)
 
-    tmp=len(myGame.current_Node.current_board)*[None]
-    for i in range(len(myGame.current_Node.current_board)):
-        tmp[i] = myGame.current_Node.current_board[i]
-    board = tmp
+    if str(move) in node.children.keys(): #if child already exists go to it
+        nextNode = node.children[str(move)]
+        return nextNode
     
-    #print(pieces)
-    for p in range(len(pieces)):
-        if int(pieces[p][2:])==newPos:
-            del pieces[p]
-            break
+    pieces = np.array(node.current_Pieces)
+    board = np.array(node.current_board)
+    info = np.array(node.current_info)
+    
 
-    for p in range(len(pieces)):
-        if int(pieces[p][2:])==int(piece[2:]):
-            pieces[p]=piece[:2]+str(newPos)
-            break
+    tmp = np.array([int(x[2:]) for x in pieces])
+    if board[newPos]!=None:#if in new position there is a piece del it from piece list
+        pieces = np.delete(pieces,np.where(tmp == newPos)[0][0])
+    
+    tmp = np.array([int(x[2:]) for x in pieces])
+    pos = np.where(tmp == int(piece[2:]))
+    pieces[pos[0][0]]=piece[:2]+str(newPos) #update list pieces with new position
+
 
     if board[newPos]!=None:
         if board[newPos][1]=='R': #if rook captured handle roke logic
-            if newPos==0: myGame.current_Node.current_info[2]=False
-            if newPos==7: myGame.current_Node.current_info[1]=False
-            if newPos==56: myGame.current_Node.current_info[4]=False
-            if newPos==63: myGame.current_Node.current_info[3]=False
+            if newPos==0: info[2]=False
+            if newPos==7: info[1]=False
+            if newPos==56: info[4]=False
+            if newPos==63: info[3]=False
 
     if piece[1]=='p':
 
@@ -361,50 +334,50 @@ def movePiece(piece,newPos,myGame): #add casles
     if piece[1]=='p' and newPos//Nwidth in [7,0]: 
         board[newPos]=piece[0]+'Q' #promotion
         #print(board[newPos])
-    
-    
-    '''
-    print("movePiece('"+piece+"',"+str(newPos)+",myGame)")
-    print("drawBoard(screen,myGame.current_board,view,[])")
-    print("time.sleep(dt)")
-    '''
+
 
     # handle roke logic
     moved2Sq=None
     if piece[1]=='p':
         if abs(int(piece[2:])//Nwidth-newPos//Nwidth): moved2Sq = int(piece[2:])%Nwidth
     if piece[:2]=='wK':
-        myGame.current_Node.current_info[1]=False
-        myGame.current_Node.current_info[2]=False
+        info[1]=False
+        info[2]=False
     if piece[:2]=='bK':
-        myGame.current_Node.current_info[3]=False
-        myGame.current_Node.current_info[4]=False
+        info[3]=False
+        info[4]=False
     if piece == 'wR0':
-        myGame.current_Node.current_info[1]=False
+        info[2]=False
     if piece == 'wR7':
-        myGame.current_Node.current_info[2]=False
+        info[1]=False
     if piece == 'bR56':
-        myGame.current_Node.current_info[3]=False
+        info[4]=False
     if piece == 'bR63':
-        myGame.current_Node.current_info[4]=False
+        info[3]=False
 
 
     if abs(newPos%Nwidth - int(piece[2:])%Nwidth)==2 and piece[1]=='K':
         #casles
         if newPos%Nwidth==6: #small casles
             if newPos//Nwidth==0:#white
-                movePiece('wR7',5,myGame)
+                board[5]='wR'
+                board[7]=None
             else: #black
-                movePiece('bR63',61,myGame)
+                board[61]='bR'
+                board[63]=None
         else: #big casles
             if newPos//Nwidth==0:#white
-                movePiece('wR0',3,myGame)
+                board[3]='wR'
+                board[0]=None
             else: #black
-                movePiece('bR56',59,myGame)
-    
+                board[59]='bR'
+                board[56]=None
 
-    myGame.update(piece+" "+str(newPos),board,pieces,[moved2Sq,myGame.current_Node.current_info[1],myGame.current_Node.current_info[2],myGame.current_Node.current_info[3],myGame.current_Node.current_info[4]])
-    #print(myGame.current_info)
+    
+    newNode = Node(move,board,pieces,[moved2Sq,info[1],info[2],info[3],info[4]],not node.whiteToPlay)
+    node.addChild(newNode)
+
+    return newNode
         
 def attacking_Squares(piece,board):
     squares = []
@@ -413,7 +386,7 @@ def attacking_Squares(piece,board):
     type = piece[1]
     pos = int(piece[2:])
 
-    if type =='p': #add unpassun
+    if type =='p': 
         logic , sq = newPos(pos,1,2*(color=='w')-1)
         if logic: squares.append(sq)
         logic , sq = newPos(pos,-1,2*(color=='w')-1)
@@ -473,21 +446,20 @@ def attacking_Squares(piece,board):
 
     return squares
 
-def attacking_Squares_Total(color,myGame):
-    _Pieces = myGame.current_Pieces
-    board = myGame.current_board
+def attacking_Squares_Total(color,node): #track the before attacking sq and redefine bace on the diff of the move
+    _Pieces = node.current_Pieces
+    board = node.current_board
 
     squares = []
     for piece in _Pieces:
         if piece[0]!=color:
             tmp=attacking_Squares(piece,board)
             squares+=tmp
-            #print(piece,tmp)
-    return list(set(squares))
+    return list(set(squares)) #αμα θελω σε καθε νοδε να κραταω την διαφορα στα attacking squares για ποιο γρήγορα δε το θελω σε set αλλα append πρεπει να εγω και το ποσες φορες απειλείται το καθε square
 
-def isCheck(color,aSq,myGame):
+def isCheck(color,aSq,node):
     pos = None
-    for piece in myGame.current_Pieces:
+    for piece in node.current_Pieces:
         if piece[:2]==color+'K':
             pos = int(piece[2:])
     
@@ -508,12 +480,12 @@ def sign(x):
     else:
         return [0,0]
 
-def leagalMoves(piece,myGame): #piece : my moving piece, pieces all the pieces of the board , board : the arr of the board
-    pieces = myGame.current_Node.current_Pieces
-    board = myGame.current_Node.current_board
+def leagalMoves(piece,node): #piece : my moving piece, pieces all the pieces of the board , board : the arr of the board
+    pieces = node.current_Pieces
+    board = node.current_board
 
-    posibleMove = posibleMoves(piece,myGame.current_Node)
-    aSq=attacking_Squares_Total(piece[0],myGame.current_Node)
+    posibleMove = posibleMoves(piece,node)
+    aSq=attacking_Squares_Total(piece[0],node)
     
     #print("aSq: ",aSq)
     logic , directions , pSq = pinnedSquares(pieces,piece[0],board)
@@ -540,22 +512,18 @@ def leagalMoves(piece,myGame): #piece : my moving piece, pieces all the pieces o
     else:
         finalSq=posibleMove[:]            
 
-    if isCheck(piece[0],aSq,myGame.current_Node): #A BAD WAY OF FINDING THE MOVES THAT LEAD TO NO CHECK IF IS CHECK  IN THE FIRST PLACE
+    if isCheck(piece[0],aSq,node): #A BAD WAY OF FINDING THE MOVES THAT LEAD TO NO CHECK IF IS CHECK  IN THE FIRST PLACE
         #print("is in check!")
         finalSq_output = []
+
         for move in finalSq:
             #print("do the move: "+piece[:2]+str(move))
-            movePiece(piece,move,myGame) #do the move 
-            aSq = attacking_Squares_Total(piece[0],myGame.current_Node) #find the new attackted sq
-            if isCheck(piece[0],aSq,myGame.current_Node)==False: #see again if is in check
+            newNode = movePiece(piece,move,node) #do the move 
+            aSq = attacking_Squares_Total(piece[0],newNode) #find the new attackted sq
+            if isCheck(piece[0],aSq,newNode)==False: #see again if is in check
                 #print("Leagal!")
                 finalSq_output.append(move)
-            #undo move
-            myGame.goOnelayerUp()
+            
         return finalSq_output
 
     return finalSq
-
-
-
-#check , unpasan 

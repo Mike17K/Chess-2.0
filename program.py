@@ -16,13 +16,16 @@ Pieces += ['wp8','wp9','wp10','wp11','wp12','wp13','wp14','wp15']
 Pieces += ['bp48','bp49','bp50','bp51','bp52','bp53','bp54','bp55']
 Pieces += ['bR56','bN57','bB58','bQ59','bK60','bB61','bN62','bR63']
 
+#short list for increasing the speed of the alpha beta minimax
+Pieces.sort(key = lambda x: pieceWeight[x[1]],reverse=True)
+
 #Place the pieces in the board
 for piece in Pieces: board[int(piece[2:])] = piece[:2]
 
 #################
 # Main program
 #################
-screen=createWindow()
+
 myGame = ChessGame(board,Pieces,[None,True,True,True,True],whiteToPlay) #None: no pawn 2 moves before, ,True,True,True,True for each roke
 #chessPosition1(screen,myGame)
 click=0
@@ -70,15 +73,19 @@ while running:
                     #pygame.event.get()
                     time.sleep(0.3)
                     drawBoard(screen,myGame.current_Node.current_board,view,highlightSq)
+
         if event.type == pygame.MOUSEBUTTONUP: click=0 #click handle kai move
         if event.type == pygame.MOUSEBUTTONDOWN: #click handle kai move
-            if click==0: click=1
+            click=1
+            
             pos = getMouseSq(view)
             if pos==None: break
             if startPos!=None:
                 if pos in highlightSq:
-                    movePiece(myGame.current_Node.current_board[startPos]+str(startPos),pos,myGame)
-                    whiteToPlay=not whiteToPlay
+                    newNode = movePiece(myGame.current_Node.current_board[startPos]+str(startPos),pos,myGame.current_Node)
+                    myGame.update(newNode)
+
+                    whiteToPlay=myGame.current_Node.whiteToPlay
                     #print("Pieces: ",Pieces)
                     startPos = None
                     highlightSq=[]
@@ -90,7 +97,7 @@ while running:
                 elif myGame.current_Node.current_board[pos][0]=='b': ok = True
                 if ok:
                     startPos = pos
-                    highlightSq=leagalMoves(myGame.current_Node.current_board[pos]+str(pos),myGame)
+                    highlightSq=leagalMoves(myGame.current_Node.current_board[pos]+str(pos),myGame.current_Node)
                 else:
                     startPos = None
                     highlightSq=[]
@@ -103,11 +110,16 @@ while running:
     if Button1.returnValue(click): #display the start position
         click=0
         myGame.goToStartNode()
+        whiteToPlay = myGame.current_Node.whiteToPlay
 
     if Button2.returnValue(click): #display the prev node of the tree
         click=0
         if myGame.current_Node.parent!=None:
             myGame.goOnelayerUp()
+
+            Button6.mode=0
+            AI=0
+            
             whiteToPlay = myGame.current_Node.whiteToPlay
         highlightSq=[]
         
@@ -115,21 +127,30 @@ while running:
         click=0
         highlightSq=[]
         if myGame.current_Node.parent!=None:
-            print("Delete in not working correctly!")
+            delNode(myGame.current_Node)
 
     if Button4.returnValue(click): myGame.goToTheNextNode() #fix
     if Button5.returnValue(click): myGame.goToTheFinalPosition()
     if Button7.returnValue(click): view*=-1
 
     if Button6.returnValue(click): #activate AI
-        AI=(Button6.mode+1)%2
+        AI=Button6.mode
         highlightSq = []
+
+    #print(click,Button6.click,Button6.mode,Button6.hover)
 
     if Button8.returnValue(click): #choose AI color
-        AIColor=(Button8.mode==1)
+        AIColor=(Button8.mode==0)
         highlightSq = []
-
-
+    
+    '''
+    Button8.mode=1-Button8.mode
+    AIColor=whiteToPlay
+    AI=1
+    '''
+    
+    drawBoard(screen,myGame.current_Node.current_board,view,highlightSq)
+    
     if whiteToPlay==AIColor and AI==1:
         if AI_player(myGame,whiteToPlay)==0:
             whiteToPlay=not whiteToPlay
@@ -139,6 +160,5 @@ while running:
     
     #add labels
 
-    drawBoard(screen,myGame.current_Node.current_board,view,highlightSq)
 
     

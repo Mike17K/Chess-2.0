@@ -68,11 +68,11 @@ def getMouseSq(view):
 
     return int(x+Nwidth*y )
 
-def createWindow():    
+'''def createWindow():    
     screen = pygame.display.set_mode(windowDimentions)
     screen.fill((102, 65, 45))
     pygame.display.set_caption(captionText)
-    return screen
+    return screen'''
 
 class assets:
     items=[]
@@ -98,8 +98,7 @@ class assets:
                     color = asset.color[0]
                     bg_color = [color[0],color[1],color[2]]
             elif asset.type=='button_togle':
-                if asset.hover and asset.click==1:  
-                    asset.mode=(asset.mode+1)%2
+                pass
                     #print(asset.mode)
 
                 if asset.mode==0: 
@@ -160,11 +159,14 @@ class button_togle(assets):
         assets.items.append(self)
     
     def returnValue(self,click):
-        self.click=click
-        if click==1 and self.hover:
-            click=0
+        if click ==0 and self.click==1 and self.hover:
+            self.mode=(self.mode+1)%2
+            self.click=click                 
             return True
+        self.click=click 
         return False
+
+        
 
 '''
 def button(screen,click,pos=[None,None],dimentions = [100,50],font=18,text='',color=[100,100,100]):
