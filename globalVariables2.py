@@ -1,3 +1,5 @@
+import numpy as np
+
 colors={
     "background_colour": (234, 212, 252),
 
@@ -12,6 +14,38 @@ pieceWeight = {
     "Q":9,
     "K":300
 }
+
+class Node:
+    def __init__(self,move,board,pieces :dict,info,whiteToPlay): #add self.king positions = [w pos,b pos] to remove some loops
+        # elements
+        self.whiteToPlay = whiteToPlay
+        self.move = move
+
+        self.current_board = np.copy(board)
+        self.current_Pieces = np.copy(pieces)
+        self.current_info = np.copy(info)
+
+        self.parent=None
+        self.children = {}
+
+        self.kingPositions = [None,None]
+        self.current_leagalMoves = {}
+        self.isCheck = False
+        #
+
+
+    def setParent(self,parent): self.parent = parent
+
+    def addChild(self,child):
+        child.setParent(self) #def the childs parent the curent node
+        self.children[str(child.move)]=child #add the child to child list
+    
+    def removeChild(self,node):
+        del self.children[str(node.move)]
+        
+    def copy(self):
+        return Node(self.move,self.board,self.pieces,self.info,self.whiteToPlay)
+
 
 background_colour = (234, 212, 252)
 

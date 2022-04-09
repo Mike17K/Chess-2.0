@@ -10,6 +10,10 @@ pygame.init()
 whiteToPlay=True
 
 #Create pieces
+#Pieces = {'wR': [0,7],'wN':[1,6],'wB':[2,5],'wQ':[3],'wK':[4],'wp':[8,9,10,11,12,13,14,15],
+#'bR': [56,63],'bN': [57,62],'bB': [58,61],'bQ': [59],'bK': [60],'bp': [48,49,50,51,52,53,54,55]}
+
+
 Pieces = ['wR0','wN1','wB2','wQ3','wK4','wB5','wN6','wR7']
 Pieces += ['wp8','wp9','wp10','wp11','wp12','wp13','wp14','wp15']
 
@@ -19,6 +23,7 @@ Pieces += ['bR56','bN57','bB58','bQ59','bK60','bB61','bN62','bR63']
 #short list for increasing the speed of the alpha beta minimax
 Pieces.sort(key = lambda x: pieceWeight[x[1]],reverse=True)
 
+
 #Place the pieces in the board
 for piece in Pieces: board[int(piece[2:])] = piece[:2]
 
@@ -27,6 +32,7 @@ for piece in Pieces: board[int(piece[2:])] = piece[:2]
 #################
 
 myGame = ChessGame(board,Pieces,[None,True,True,True,True],whiteToPlay) #None: no pawn 2 moves before, ,True,True,True,True for each roke
+
 #chessPosition1(screen,myGame)
 click=0
 
@@ -48,6 +54,7 @@ AI=Button6.mode
 AIColor=not (Button8.mode==1)
 startPos=None
 highlightSq=[]
+leagal_Moves=[]
 while running:
     for event in pygame.event.get():
  
@@ -81,13 +88,14 @@ while running:
             pos = getMouseSq(view)
             if pos==None: break
             if startPos!=None:
-                if pos in highlightSq:
+                if pos in leagal_Moves:
                     newNode = movePiece(myGame.current_Node.current_board[startPos]+str(startPos),pos,myGame.current_Node)
                     myGame.update(newNode)
 
                     whiteToPlay=myGame.current_Node.whiteToPlay
                     #print("Pieces: ",Pieces)
                     startPos = None
+                    leagal_Moves=[]
                     highlightSq=[]
                     break
             if myGame.current_Node.current_board[pos]!=None:
@@ -97,12 +105,15 @@ while running:
                 elif myGame.current_Node.current_board[pos][0]=='b': ok = True
                 if ok:
                     startPos = pos
-                    highlightSq=leagalMoves(myGame.current_Node.current_board[pos]+str(pos),myGame.current_Node)
+                    leagal_Moves=leagalMoves(myGame.current_Node.current_board[pos]+str(pos),myGame.current_Node)
+                    highlightSq = leagal_Moves
                 else:
                     startPos = None
+                    leagal_Moves=[]
                     highlightSq=[]
             else:
                 startPos = None
+                leagal_Moves=[]
                 highlightSq=[]
 
     assets.update()
@@ -118,6 +129,7 @@ while running:
             myGame.goOnelayerUp()
 
             Button6.mode=0
+
             AI=0
             
             whiteToPlay = myGame.current_Node.whiteToPlay
